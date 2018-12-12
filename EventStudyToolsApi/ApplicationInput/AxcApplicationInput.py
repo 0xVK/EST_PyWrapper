@@ -9,10 +9,6 @@ class AxcApplicationInput(BaseApplicationInput):
 
     REQUEST_DATA_FILE = 'request_file'
 
-    RETURN_TYPE_LOG = 'log'
-
-    RETURN_TYPE_SIMPLE = 'simple'
-
     def set_return_type(self, return_type):
         self.set('parameters', 'return_type', return_type)
 
@@ -37,7 +33,7 @@ class AxcApplicationInput(BaseApplicationInput):
     def init_firm_data_source(self, source_type, source_hash=''):
         self.init_data_source(self.FIRM_DATA_FILE, source_type, source_hash)
 
-    def set_test_statistics(self, test_statistics):
+    def set_test_statistics(self, test_statistics=[]):
 
         if test_statistics:
 

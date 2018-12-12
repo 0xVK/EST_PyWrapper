@@ -1,6 +1,7 @@
 import requests
 import telebot
 from .exceptions import ApiException
+from .ApplicationInput.BaseApplicationInput import BaseApplicationInput
 
 
 class ApiWrapper:
@@ -42,21 +43,36 @@ class ApiWrapper:
 
         return self.token
 
-    def _request(self, api_method, http_method, headers={}, params={}):
+    def configure_task(self, application_input):
+
+        json = application_input.to_json()
+
+        headers = {
+            self.CONTENT_TYPE_HEADER: self.CONTENT_TYPE_JSON,
+            self.TASK_KEY_HEADER: self.token,
+        }
+
+        print(headers)
+
+        response = self._request('/task/conf', 'POST', headers, json)
+
+    def _request(self, api_method, http_method, headers={}, json_data=''):
 
         request_url = self.api_server_url + api_method
 
         if http_method == 'GET':
-            response = requests.get(request_url, params=params, headers=headers)
+            response = requests.get(request_url, headers=headers)
 
         if http_method == 'POST':
-            response = requests.post(request_url, params=params, headers=headers)
+            response = requests.post(request_url, json=json_data, headers=headers)
 
         return self._check_result(api_method, response)
 
+
     def _check_result(self, api_method, result):
 
-        # print(result.request.headers)
+        print('METHOD: ', api_method)
+        print(result.request.headers)
         # print(result.status_code)
 
         try:

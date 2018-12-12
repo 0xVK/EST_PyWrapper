@@ -3,6 +3,28 @@ import json
 
 class BaseApplicationInput:
 
+    LOCALE_EN = 'en'
+
+    DATA_SOURCE_TYPE_CSV = 'csv'
+
+    DATA_SOURCE_TYPE_CSV_ZIP = 'csv_zip'
+    
+    DATA_SOURCE_TYPE_XLS = 'xls'
+
+    DATA_SOURCE_TYPE_XLS_ZIP = 'xls_zip'
+
+    DATA_SOURCE_TYPE_XLSX = 'xlsx'
+
+    DATA_SOURCE_TYPE_XLSX_ZIP = 'xlsx_zip'
+
+    RESULT_FILE_TYPE_XLS = 'xls'
+
+    RESULT_FILE_TYPE_ODS = 'ods'
+
+    RESULT_FILE_TYPE_CSV = 'csv'
+
+    RESULT_FILE_TYPE_XLSX = 'xlsx'
+    
     request_data = {}
 
     def set(self, section, key, value):
@@ -35,6 +57,7 @@ class BaseApplicationInput:
             'hash': source_hash
         }
 
-        self.set('application', 'application', [])
+        if 'data_sources' not in self.request_data['application'].keys():
+            self.set('application', 'data_sources', [])
 
-        self.request_data['application']['application'].append(data_source)
+        self.request_data['application']['data_sources'].append(data_source)

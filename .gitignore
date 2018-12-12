@@ -2,3 +2,4 @@
 .*
 !/.gitignore
 /.directory
+__pycache__/

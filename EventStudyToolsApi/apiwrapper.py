@@ -1,36 +1,63 @@
 import requests
+import telebot
 from .exceptions import ApiException
 
 
 class ApiWrapper:
 
-    def __init__(self, api_server_url, api_key, max_chunk_size=41943040, connect_timeout=10):
+    CONTENT_TYPE_HEADER = 'Content-Type'
+
+    CONTENT_TYPE_JSON = 'application/json'
+
+    CONTENT_TYPE_OCTET_STREAM = 'application/octet-stream'
+
+    CUSTOMER_KEY = 'X-Customer-Key'
+
+    TASK_KEY_HEADER = 'X-Task-Key'
+
+    def __init__(self, api_server_url, api_key, max_chunk_size=41943040, connection_timeout=10):
 
         self.api_server_url = api_server_url
         self.api_key = api_key
         self.max_chunk_size = max_chunk_size
-        self.connect_timeout = connect_timeout
+        self.connection_timeout = connection_timeout
+        self.token = ''
 
     def get_api_version(self):
 
         response = self._request('/version', 'GET')
 
-        return response.json().get('version') or ''
+        return response.get('version') or ''
+
+    def authentication(self):
+
+        headers = {
+            self.CONTENT_TYPE_HEADER: self.CONTENT_TYPE_JSON,
+            self.CUSTOMER_KEY: self.api_key,
+        }
+
+        response = self._request('/task/create', 'POST', headers)
+
+        self.token = response.get('token')
+
+        return self.token
 
     def _request(self, api_method, http_method, headers={}, params={}):
 
         request_url = self.api_server_url + api_method
 
         if http_method == 'GET':
+            response = requests.get(request_url, params=params, headers=headers)
 
-            return requests.get(request_url, params=params, headers=headers)
+        if http_method == 'POST':
+            response = requests.post(request_url, params=params, headers=headers)
+
+        return self._check_result(api_method, response)
 
     def _check_result(self, api_method, result):
 
-        if result.status_code != 200:
-            msg = 'The server returned HTTP {0} {1}. Response body:\n[{2}]' \
-                .format(result.status_code, result.reason, result.text.encode('utf8'))
-            raise ApiException(msg, api_method, result)
+        # print(result.request.headers)
+        # print(result.status_code)
 
         try:
             result_json = result.json()
@@ -39,55 +66,13 @@ class ApiWrapper:
                 .format(result.text.encode('utf8'))
             raise ApiException(msg, api_method, result)
 
-        if not result_json['ok']:
-            msg = 'Error code: {0} Description: {1}' \
-                .format(result_json['error_code'], result_json['description'])
+        if result_json.get('error'):
+            msg = 'The server returned an error : {}'.format(result_json['error'])
             raise ApiException(msg, api_method, result)
+
+        if result.status_code != 200:
+            msg = 'The server returned HTTP {0} {1}. Response body:\n[{2}]' \
+                .format(result.status_code, result.reason, result.text.encode('utf8'))
+            raise ApiException(msg, api_method, result)
+
         return result_json
-
-
-"""
-    public function getApiVersion()
-    {
-        $version = '';
-        $response = $this->_request('/version', 'GET');
-
-        if ($response['code'] == 200) {
-            $result = json_decode($response['result']);
-            if (isset($result->version)) {
-                $version = $result->version;
-            }
-        }
-
-        return $version;
-    }
-    """
-
-"""
-private function _request($apiMethodName, $httpMethod, $httpHeaders = [], $params = '')
-    {
-
-        $response = [];
-
-        $ch = curl_init($this->apiServerUrl . $apiMethodName);
-
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $httpMethod);
-        if ($httpMethod == 'POST') {
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
-        }
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $httpHeaders);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-        $response['result'] = curl_exec($ch);
-        $response['code'] = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $response['error'] = curl_error($ch);
-        curl_close($ch);
-
-        if (!empty($response['error'])) {
-            throw new \Exception($response['error']);
-        }
-
-        return $response;
-    }
-"""
